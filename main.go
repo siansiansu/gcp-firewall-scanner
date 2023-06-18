@@ -28,7 +28,6 @@ type FirewallRule struct {
 type VMInstance struct {
 	Name         string
 	Status       string
-	Labels       map[string]string
 	NetworkTags  []string
 	CreationTime string
 }
@@ -181,11 +180,15 @@ func outputFirewallRules(firewallRulesAll *[]FirewallRule) {
 func outputVMInstances(instances *[]VMInstance) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	header := []string{"Instance Name", "Status", "Labels", "Network Tags", "Creation Time"}
+	header := []string{"Instance Name", "Status", "Network Tags", "Creation Time"}
 	t.AppendHeader(table.Row{header})
 	for _, instance := range *instances {
 		t.AppendRows([]table.Row{
-			{instance.Name, strings.Join(instance.NetworkTags, ", ")},
+			{instance.Name,
+				instance.Status,
+				strings.Join(instance.NetworkTags, ", "),
+				instance.CreationTime,
+			},
 		})
 		t.AppendSeparator()
 	}
@@ -202,7 +205,11 @@ func outputVMInstances(instances *[]VMInstance) {
 		_ = w.Write(header)
 		sort.Sort(VMInstanceList(*instances))
 		for _, instance := range *instances {
-			_ = w.Write([]string{instance.Name, strings.Join(instance.NetworkTags, ", ")})
+			_ = w.Write([]string{instance.Name,
+				instance.Status,
+				strings.Join(instance.NetworkTags, ", "),
+				instance.CreationTime,
+			})
 		}
 
 		defer w.Flush()
@@ -225,7 +232,6 @@ func getVMInstances(computeService *compute.Service, projectID string) (*[]VMIns
 				instances = append(instances, VMInstance{
 					Name:         vmInstance.Name,
 					Status:       vmInstance.Status,
-					Labels:       vmInstance.Labels,
 					NetworkTags:  vmInstance.Tags.Items,
 					CreationTime: vmInstance.CreationTimestamp,
 				})
